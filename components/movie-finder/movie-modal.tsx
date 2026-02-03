@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { X, Star } from 'lucide-react'
-import { getBackdropUrl, getPosterUrl } from '@/lib/tmdb'
-import type { MovieDetails } from '@/lib/types'
+import { X, Star, Play } from 'lucide-react'
+import { getBackdropUrl, getPosterUrl, getProviderLogoUrl } from '@/lib/tmdb'
+import { getMovieVideos, getWatchProviders } from '@/lib/tmbd-actions'
+import type { MovieDetails, Video, WatchProviderCountry } from '@/lib/types'
 
 interface MovieModalProps {
   movie: MovieDetails | null
@@ -14,6 +15,11 @@ interface MovieModalProps {
 }
 
 export function MovieModal({ movie, isOpen, isLoading, onClose }: MovieModalProps) {
+  const [trailer, setTrailer] = useState<Video | null>(null)
+  const [providers, setProviders] = useState<WatchProviderCountry | null>(null)
+  const [showTrailer, setShowTrailer] = useState(false)
+  const [loadingExtras, setLoadingExtras] = useState(false)
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -22,6 +28,33 @@ export function MovieModal({ movie, isOpen, isLoading, onClose }: MovieModalProp
     }
     return () => {
       document.body.style.overflow = 'auto'
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    async function loadExtras() {
+      if (movie?.id && isOpen) {
+        setLoadingExtras(true)
+        setShowTrailer(false)
+
+        const [videoData, providerData] = await Promise.all([
+          getMovieVideos(movie.id),
+          getWatchProviders(movie.id, 'ES')
+        ])
+
+        setTrailer(videoData)
+        setProviders(providerData)
+        setLoadingExtras(false)
+      }
+    }
+    loadExtras()
+  }, [movie?.id, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setTrailer(null)
+      setProviders(null)
+      setShowTrailer(false)
     }
   }, [isOpen])
 
@@ -35,7 +68,7 @@ export function MovieModal({ movie, isOpen, isLoading, onClose }: MovieModalProp
 
   if (!isOpen) return null
 
-  const backdropUrl = movie?.backdrop_path 
+  const backdropUrl = movie?.backdrop_path
     ? getBackdropUrl(movie.backdrop_path)
     : getPosterUrl(movie?.poster_path ?? null, 'w500')
 
@@ -53,8 +86,17 @@ export function MovieModal({ movie, isOpen, isLoading, onClose }: MovieModalProp
   const rating = movie?.vote_average ? movie.vote_average.toFixed(1) : 'N/A'
   const genresText = movie?.genres?.map(g => g.name).join(', ') || 'N/A'
 
+  // Combinar todos los providers únicos
+  const allProviders = [
+    ...(providers?.flatrate || []),
+    ...(providers?.rent || []),
+    ...(providers?.buy || [])
+  ].filter((provider, index, self) =>
+    index === self.findIndex(p => p.provider_id === provider.provider_id)
+  )
+
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-foreground/85 z-50 overflow-y-auto flex justify-center items-center p-8 animate-fadeIn"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
@@ -73,16 +115,40 @@ export function MovieModal({ movie, isOpen, isLoading, onClose }: MovieModalProp
           </div>
         ) : (
           <>
+            {/* Hero section with backdrop/trailer */}
             <div className="w-full h-[400px] bg-gradient-to-br from-muted to-muted/80 relative overflow-hidden">
-              {backdropUrl && (
-                <Image
-                  src={backdropUrl || "/placeholder.svg"}
-                  alt={movie?.title || ''}
-                  fill
-                  className="object-cover"
+              {showTrailer && trailer ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0`}
+                  title={trailer.name}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
                 />
+              ) : (
+                <>
+                  {backdropUrl && (
+                    <Image
+                      src={backdropUrl || "/placeholder.svg"}
+                      alt={movie?.title || ''}
+                      fill
+                      className="object-cover"
+                    />
+                  )}
+                  <div className="absolute bottom-0 left-0 w-full h-[150px] bg-gradient-to-b from-transparent to-background" />
+
+                  {/* Play trailer button */}
+                  {trailer && (
+                    <button
+                      onClick={() => setShowTrailer(true)}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 px-6 py-3 bg-background/90 hover:bg-gold text-foreground hover:text-background rounded-full transition-all duration-300 group shadow-xl"
+                    >
+                      <Play className="w-5 h-5 fill-current" />
+                      <span className="font-medium tracking-wide">Ver Trailer</span>
+                    </button>
+                  )}
+                </>
               )}
-              <div className="absolute bottom-0 left-0 w-full h-[150px] bg-gradient-to-b from-transparent to-background" />
             </div>
 
             <div className="p-8 md:px-12 md:pb-12">
@@ -112,7 +178,50 @@ export function MovieModal({ movie, isOpen, isLoading, onClose }: MovieModalProp
                 {movie?.overview || 'Sin descripción disponible.'}
               </p>
 
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mt-8 pt-8 border-t border-foreground/10">
+              {/* Watch Providers Section - Minimalista */}
+              {!loadingExtras && allProviders.length > 0 && (
+                <div className="mb-8 pb-8 border-b border-foreground/10">
+                  <p className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
+                    Disponible en
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {allProviders.slice(0, 8).map((provider) => (
+                      <div
+                        key={provider.provider_id}
+                        className="group relative"
+                        title={provider.provider_name}
+                      >
+                        <Image
+                          src={getProviderLogoUrl(provider.logo_path) || "/placeholder.svg"}
+                          alt={provider.provider_name}
+                          width={32}
+                          height={32}
+                          className="rounded-md opacity-80 hover:opacity-100 transition-opacity duration-200"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {providers?.link && (
+                    <a
+                      href={providers.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 text-xs tracking-wider text-muted-foreground hover:text-gold transition-colors"
+                    >
+                      Ver más opciones
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {loadingExtras && (
+                <div className="mb-8 pb-8 border-b border-foreground/10 flex items-center gap-3">
+                  <div className="inline-block w-4 h-4 border-2 border-muted border-t-gold rounded-full animate-spin" />
+                  <span className="text-xs text-muted-foreground">Cargando información...</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6">
                 <div>
                   <h4 className="font-serif text-xl mb-2 text-foreground">Director</h4>
                   <p className="text-sm text-foreground/60">{directors}</p>

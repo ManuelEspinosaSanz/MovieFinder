@@ -54,3 +54,37 @@ export interface TMDBResponse {
 export interface GenresResponse {
   genres: Genre[]
 }
+
+export interface Video {
+  id: string
+  key: string
+  name: string
+  site: string
+  type: string
+  official: boolean
+}
+
+export interface VideosResponse {
+  results: Video[]
+}
+
+export interface WatchProvider {
+  logo_path: string
+  provider_id: number
+  provider_name: string
+  display_priority: number
+}
+
+export interface WatchProviderCountry {
+  link?: string
+  flatrate?: WatchProvider[]
+  rent?: WatchProvider[]
+  buy?: WatchProvider[]
+  ads?: WatchProvider[]
+}
+
+export interface WatchProvidersResponse {
+  results: {
+    [countryCode: string]: WatchProviderCountry
+  }
+}
