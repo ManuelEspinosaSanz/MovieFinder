@@ -36,7 +36,7 @@ export function Footer() {
 
         {/* Bottom info */}
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 pt-4 text-xs tracking-[0.2em] uppercase text-foreground/30">
-          <span>&copy; {currentYear}</span>
+          <span>DAW &copy; {currentYear}</span>
         </div>
       </div>
     </footer>
