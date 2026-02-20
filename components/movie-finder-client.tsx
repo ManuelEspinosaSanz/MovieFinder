@@ -2,7 +2,11 @@
 
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
-import { Header, SearchSection, MovieGallery, MovieModal, Footer } from '.'
+import { Header } from '@/components/header'
+import { SearchSection } from '@/components/search-section'
+import { MovieGallery } from '@/components/movie-gallery'
+import { MovieModal } from '@/components/movie-modal'
+import { Footer } from '@/components/footer'
 import { getMovies, searchMovies, getMovieDetails } from '@/app/actions'
 import type { Movie, Genre, MovieDetails, FilterType } from '@/lib/types'
 

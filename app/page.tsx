@@ -1,7 +1,7 @@
-import { MovieFinderClient } from '@/components/movie-finder/movie-finder-client'
-import { ApiKeyWarning } from '@/components/movie-finder/api-key-warning'
-import { Header } from '@/components/movie-finder/header'
-import { Footer } from '@/components/movie-finder/footer'
+import { MovieFinderClient } from '@/components/movie-finder-client'
+import { ApiKeyWarning } from '@/components/api-key-warning'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
 import { getMovies, getGenres } from './actions'
 
 export default async function Home() {

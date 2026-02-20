@@ -83,6 +83,7 @@ export function getBackdropUrl(path: string | null): string | null {
   return `${IMG_BASE_URL}/original${path}`
 }
 
+
 export async function fetchMovieVideos(movieId: number): Promise<Video | null> {
   try {
     const response = await fetch(
@@ -139,3 +140,4 @@ export async function fetchWatchProviders(movieId: number, countryCode: string =
 export function getProviderLogoUrl(path: string): string {
   return `${IMG_BASE_URL}/w92${path}`
 }
+
