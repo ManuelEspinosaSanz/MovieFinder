@@ -19,23 +19,13 @@ const _workSans = Work_Sans({
 export const metadata: Metadata = {
   title: 'MovieFinder - Cartelera Contemporánea',
   description: 'Descubre las mejores películas: populares, en cartelera, próximos estrenos y las mejor valoradas.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/icon.png',
+        type: 'image/png',
       },
     ],
-    apple: '/apple-icon.png',
   },
 }
 
